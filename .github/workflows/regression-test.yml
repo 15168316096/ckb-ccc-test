@@ -1,0 +1,246 @@
+name: CKB CCC SDK Regression Tests
+
+on:
+  # 手动触发 - 支持自定义参数
+  workflow_dispatch:
+    inputs:
+      ccc_ref:
+        description: 'CCC SDK Git ref (branch, tag, or commit SHA)'
+        required: false
+        default: 'master'
+        type: string
+      ccc_repo:
+        description: 'CCC SDK repository (owner/repo format)'
+        required: false
+        default: 'ckb-devrel/ccc'
+        type: string
+      network:
+        description: 'Network to test'
+        required: true
+        default: 'testnet'
+        type: choice
+        options:
+          - testnet
+          - mainnet
+          - devnet
+          - all
+      test_suite:
+        description: 'Test suite to run'
+        required: true
+        default: 'all'
+        type: choice
+        options:
+          - all
+          - readonly
+          - multisig
+          - feepayer
+          - basic
+  
+  # PR 触发
+  pull_request:
+    branches: [main, master]
+  
+  # Push 触发
+  push:
+    branches: [main, master]
+  
+  # 定时任务 - 每天跑一次回归
+  schedule:
+    - cron: '0 2 * * *'  # UTC 2:00 AM daily
+
+env:
+  NODE_VERSION: '18'
+
+jobs:
+  # 测试矩阵 - 根据输入动态生成
+  setup:
+    runs-on: ubuntu-latest
+    outputs:
+      networks: ${{ steps.set-matrix.outputs.networks }}
+      test_suites: ${{ steps.set-matrix.outputs.test_suites }}
+    steps:
+      - name: Set test matrix
+        id: set-matrix
+        run: |
+          # 确定网络列表
+          NETWORK="${{ github.event.inputs.network || 'testnet' }}"
+          if [ "$NETWORK" = "all" ]; then
+            echo 'networks=["testnet", "mainnet"]' >> $GITHUB_OUTPUT
+          else
+            echo "networks=[\"$NETWORK\"]" >> $GITHUB_OUTPUT
+          fi
+          
+          # 确定测试套件
+          SUITE="${{ github.event.inputs.test_suite || 'all' }}"
+          if [ "$SUITE" = "all" ]; then
+            echo 'test_suites=["readonly", "multisig", "feepayer", "basic"]' >> $GITHUB_OUTPUT
+          else
+            echo "test_suites=[\"$SUITE\"]" >> $GITHUB_OUTPUT
+          fi
+
+  test:
+    needs: setup
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        network: ${{ fromJson(needs.setup.outputs.networks) }}
+        test_suite: ${{ fromJson(needs.setup.outputs.test_suites) }}
+        exclude:
+          # 主网只能跑 readonly 测试
+          - network: mainnet
+            test_suite: multisig
+          - network: mainnet
+            test_suite: feepayer
+          - network: mainnet
+            test_suite: basic
+    
+    name: Test ${{ matrix.test_suite }} on ${{ matrix.network }}
+    
+    steps:
+      - name: Checkout test repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'npm'
+
+      - name: Install base dependencies
+        run: npm ci
+
+      - name: Install custom CCC SDK from Git
+        if: ${{ github.event.inputs.ccc_ref != '' && github.event.inputs.ccc_ref != 'npm' }}
+        run: |
+          CCC_REPO="${{ github.event.inputs.ccc_repo || 'ckb-devrel/ccc' }}"
+          CCC_REF="${{ github.event.inputs.ccc_ref || 'master' }}"
+          
+          echo "📦 Installing CCC SDK from GitHub: $CCC_REPO@$CCC_REF"
+          
+          # 克隆指定版本的 CCC SDK
+          git clone --depth 1 --branch "$CCC_REF" "https://github.com/$CCC_REPO.git" /tmp/ccc || \
+          git clone "https://github.com/$CCC_REPO.git" /tmp/ccc && cd /tmp/ccc && git checkout "$CCC_REF"
+          
+          cd /tmp/ccc
+          
+          # 检查是否有 pnpm-workspace.yaml (monorepo)
+          if [ -f "pnpm-workspace.yaml" ]; then
+            echo "📦 Detected pnpm monorepo, installing with pnpm..."
+            npm install -g pnpm
+            pnpm install
+            pnpm build
+            
+            # 链接本地包
+            cd packages/core && npm link && cd ../..
+            cd packages/ccc && npm link && cd ../..
+          elif [ -f "package.json" ]; then
+            echo "📦 Installing as npm package..."
+            npm install
+            npm run build || true
+          fi
+          
+          # 回到测试项目目录，链接本地 CCC
+          cd $GITHUB_WORKSPACE
+          npm link @ckb-ccc/core @ckb-ccc/ccc || true
+          
+          echo "✅ Custom CCC SDK installed successfully"
+
+      - name: Show CCC SDK version
+        run: |
+          echo "📋 CCC SDK Version Info:"
+          npm list @ckb-ccc/ccc @ckb-ccc/core 2>/dev/null || echo "Version info not available"
+          
+          # 如果使用自定义版本，显示 git 信息
+          if [ -d "/tmp/ccc" ]; then
+            echo ""
+            echo "📋 Custom CCC SDK Git Info:"
+            cd /tmp/ccc && git log -1 --oneline
+          fi
+
+      - name: Setup environment
+        run: |
+          echo "CKB_NETWORK=${{ matrix.network }}" >> $GITHUB_ENV
+          
+          # 测试网/主网使用公共节点，无需额外配置
+          # 如果需要私钥测试，可以在 secrets 中配置
+          if [ "${{ matrix.network }}" = "testnet" ]; then
+            echo "TEST_PRIVATE_KEY=${{ secrets.TESTNET_PRIVATE_KEY }}" >> $GITHUB_ENV
+            echo "TEST_PRIVATE_KEY_2=${{ secrets.TESTNET_PRIVATE_KEY_2 }}" >> $GITHUB_ENV
+            echo "TEST_PRIVATE_KEY_3=${{ secrets.TESTNET_PRIVATE_KEY_3 }}" >> $GITHUB_ENV
+          fi
+
+      - name: Run ${{ matrix.test_suite }} tests
+        run: |
+          NETWORK="${{ matrix.network }}"
+          SUITE="${{ matrix.test_suite }}"
+          
+          echo "🧪 Running $SUITE tests on $NETWORK..."
+          
+          case $SUITE in
+            readonly)
+              npm run test:readonly
+              ;;
+            multisig)
+              npm run test:multisig
+              ;;
+            feepayer)
+              npm run test:feepayer
+              ;;
+            basic)
+              npm run test:basic
+              ;;
+            *)
+              npm test
+              ;;
+          esac
+        env:
+          CKB_NETWORK: ${{ matrix.network }}
+          CI: true
+
+      - name: Upload test results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: test-results-${{ matrix.network }}-${{ matrix.test_suite }}
+          path: |
+            coverage/
+            junit.xml
+          retention-days: 30
+
+  # 汇总报告
+  summary:
+    needs: test
+    runs-on: ubuntu-latest
+    if: always()
+    steps:
+      - name: Download all artifacts
+        uses: actions/download-artifact@v4
+        with:
+          path: artifacts
+          pattern: test-results-*
+          merge-multiple: true
+        continue-on-error: true
+
+      - name: Generate summary
+        run: |
+          echo "## 🧪 CKB CCC SDK Regression Test Summary" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          
+          # 显示测试参数
+          echo "### 📋 Test Configuration" >> $GITHUB_STEP_SUMMARY
+          echo "| Parameter | Value |" >> $GITHUB_STEP_SUMMARY
+          echo "|-----------|-------|" >> $GITHUB_STEP_SUMMARY
+          echo "| CCC Repository | \`${{ github.event.inputs.ccc_repo || 'ckb-devrel/ccc' }}\` |" >> $GITHUB_STEP_SUMMARY
+          echo "| CCC Ref | \`${{ github.event.inputs.ccc_ref || 'npm (latest)' }}\` |" >> $GITHUB_STEP_SUMMARY
+          echo "| Network(s) | \`${{ github.event.inputs.network || 'testnet' }}\` |" >> $GITHUB_STEP_SUMMARY
+          echo "| Test Suite | \`${{ github.event.inputs.test_suite || 'all' }}\` |" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          
+          # 显示整体状态
+          echo "### 📊 Results" >> $GITHUB_STEP_SUMMARY
+          if [ "${{ needs.test.result }}" = "success" ]; then
+            echo "✅ All tests passed!" >> $GITHUB_STEP_SUMMARY
+          else
+            echo "❌ Some tests failed. Please check the job logs for details." >> $GITHUB_STEP_SUMMARY
+          fi
