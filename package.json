@@ -4,16 +4,16 @@
   "description": "CKB CCC SDK integration tests for devnet, testnet, and mainnet",
   "type": "module",
   "scripts": {
-    "test": "jest",
-    "test:dev": "CKB_NETWORK=devnet jest",
-    "test:testnet": "CKB_NETWORK=testnet jest",
-    "test:mainnet": "CKB_NETWORK=mainnet jest --testPathPattern=readonly",
-    "test:multisig": "jest --testPathPattern=multisig",
-    "test:feepayer": "jest --testPathPattern=feePayer",
-    "test:basic": "jest --testPathPattern=basicTransfer",
-    "test:readonly": "jest --testPathPattern=readonly",
+    "test": "jest --forceExit",
+    "test:dev": "CKB_NETWORK=devnet jest --forceExit",
+    "test:testnet": "CKB_NETWORK=testnet jest --forceExit",
+    "test:mainnet": "CKB_NETWORK=mainnet jest --testPathPattern=readonly --forceExit",
+    "test:multisig": "jest --testPathPattern=multisig --forceExit",
+    "test:feepayer": "jest --testPathPattern=feePayer --forceExit",
+    "test:basic": "jest --testPathPattern=basicTransfer --forceExit",
+    "test:readonly": "jest --testPathPattern=readonly --forceExit",
     "test:watch": "jest --watch",
-    "test:coverage": "jest --coverage"
+    "test:coverage": "jest --coverage --forceExit"
   },
   "keywords": [
     "ckb",

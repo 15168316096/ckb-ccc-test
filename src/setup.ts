@@ -1,6 +1,12 @@
 /**
  * Jest setup file
  * This file is executed before each test file
+ * 
+ * NOTE: The --forceExit flag is used in package.json scripts because
+ * the CKB CCC SDK client does not expose a disconnect() or close() method,
+ * leaving internal resources (HTTP connection pools, timers) that prevent
+ * Jest from exiting naturally. This is a common pattern when using third-party
+ * libraries that don't provide explicit cleanup methods.
  */
 
 import dotenv from "dotenv";
