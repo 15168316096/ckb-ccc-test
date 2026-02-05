@@ -122,6 +122,24 @@ Can run on any network including mainnet:
 - 2-of-3 threshold signing
 - Transaction aggregation
 
+## Why Tests Use --forceExit Flag
+
+All test scripts in `package.json` include the `--forceExit` flag. This is **required** because the CKB CCC SDK does not provide connection cleanup methods.
+
+**Quick Summary:**
+- The SDK maintains open HTTP connections, WebSocket connections, and timers
+- No `disconnect()`, `close()`, or `destroy()` methods are available
+- Jest would wait forever for these resources to close
+- `--forceExit` forces Jest to exit after tests complete
+
+**For detailed explanation**, see [docs/JEST_FORCE_EXIT.md](docs/JEST_FORCE_EXIT.md) which covers:
+- Technical investigation of SDK internals
+- What resources remain open and why
+- Why alternative approaches don't work
+- Future improvements if SDK adds cleanup methods
+
+This is a known limitation of the SDK (as of v1.1.25) and not a bug in our tests.
+
 ## Project Structure
 
 ```
@@ -131,6 +149,8 @@ ckb-ccc-test/
 ├── jest.config.js
 ├── .env.example
 ├── README.md
+├── docs/
+│   └── JEST_FORCE_EXIT.md    # Explanation of --forceExit requirement
 └── src/
     ├── index.ts
     ├── setup.ts
