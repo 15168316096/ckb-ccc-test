@@ -109,11 +109,11 @@ If the CKB CCC SDK adds cleanup methods in future versions, we should:
    ```
 3. Update all test files to track and cleanup their client instances
 
-## Related Issues
+## Related Information
 
-- GitHub Issue: "Why isn't the connection getting disconnected?"
-- PR #1: Initial fix adding --forceExit flag
-- Review Comment: Question about connection cleanup
+- **Original Question**: "Please help me check if there's anything wrong with the comments here. Why isn't the connection getting disconnected?"
+- **Context**: Question arose from PR #1 review asking about connection cleanup
+- **Issue Link**: [GitHub Issue #2](https://github.com/15168316096/ckb-ccc-test/issues/2)
 
 ## References
 

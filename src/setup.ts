@@ -60,7 +60,9 @@ afterAll(async () => {
   // - This is why we use --forceExit flag in package.json
   // 
   // If the SDK ever adds cleanup methods in the future, they should be called here:
-  // await client.disconnect();  // Not available as of @ckb-ccc/ccc v1.1.25
+  // Example (hypothetical - not available as of @ckb-ccc/ccc v1.1.25):
+  // await sdkClient.disconnect();
+  // await signer.close();
 });
 
 // Extend Jest matchers if needed
