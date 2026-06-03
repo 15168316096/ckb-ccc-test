@@ -260,8 +260,8 @@ You can trigger tests manually with custom parameters via GitHub Actions:
 |-----------|-------------|---------|
 | `ccc_repo` | CCC SDK repository | `ckb-devrel/ccc` (default), or any fork |
 | `ccc_ref` | Git ref (branch/tag/commit) | `master`, `feat/multisig-signer`, commit SHA, etc. |
-| `network` | Target network | `testnet`, `mainnet`, `devnet`, `all` |
-| `test_suite` | Test suite to run | `all`, `readonly`, `multisig`, `feepayer`, `basic` |
+| `network` | Target network | `devnet` (default), `testnet`, `mainnet`, `all` |
+| `test_suite` | Test suite to run | `all`, `readonly`, `multisig`, `feepayer`, `basic`, `dao` |
 
 ### Example: Test a PR Branch
 
@@ -270,7 +270,7 @@ To test PR #349 (multisig support):
 ```
 ccc_repo: Hanssen0/ccc
 ccc_ref: feat/multisig-signer
-network: testnet
+network: devnet
 test_suite: multisig
 ```
 
@@ -279,7 +279,7 @@ test_suite: multisig
 ```
 ccc_repo: ckb-devrel/ccc
 ccc_ref: abc123def456
-network: all
+network: devnet
 test_suite: all
 ```
 
@@ -289,21 +289,25 @@ For write tests (basic transfer, multisig, etc.), configure these secrets in you
 
 | Secret | Description |
 |--------|-------------|
-| `TESTNET_PRIVATE_KEY` | Primary private key for testnet |
-| `TESTNET_PRIVATE_KEY_2` | Second private key (for multisig) |
-| `TESTNET_PRIVATE_KEY_3` | Third private key (for multisig) |
+| `DEVNET_RPC_URL` | Devnet RPC URL reachable by GitHub Actions |
+| `DEVNET_PRIVATE_KEY_1` | Primary private key for devnet |
+| `DEVNET_PRIVATE_KEY_2` | Second private key for devnet multisig |
+| `DEVNET_PRIVATE_KEY_3` | Third private key for devnet multisig |
+| `TESTNET_PRIVATE_KEY_1` | Primary private key for testnet |
+| `TESTNET_PRIVATE_KEY_2` | Second private key for testnet multisig |
+| `TESTNET_PRIVATE_KEY_3` | Third private key for testnet multisig |
 
-> **Note**: Mainnet tests are always read-only and don't require private keys.
+> **Note**: Mainnet tests are opt-in and always read-only; `all` runs devnet and testnet only.
 
 ### Test Matrix
 
-The workflow automatically creates a test matrix based on your inputs:
+The workflow defaults to devnet and creates a test matrix based on your inputs:
 
-| Network | readonly | multisig | feepayer | basic |
-|---------|----------|----------|----------|-------|
-| testnet | ✅ | ✅ | ✅ | ✅ |
-| mainnet | ✅ | ❌ | ❌ | ❌ |
-| devnet | ✅ | ✅ | ✅ | ✅ |
+| Network | readonly | multisig | feepayer | basic | dao |
+|---------|----------|----------|----------|-------|-----|
+| devnet | ✅ | ✅ | ✅ | ✅ | ✅ |
+| testnet | ✅ | ✅ | ✅ | ✅ | ✅ |
+| mainnet | ✅ | ❌ | ❌ | ❌ | ❌ |
 
 ### Workflow File
 
