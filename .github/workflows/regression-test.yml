@@ -35,6 +35,7 @@ on:
           - multisig
           - feepayer
           - basic
+          - dao
   
   # PR 触发
   pull_request:
@@ -73,7 +74,7 @@ jobs:
           # 确定测试套件
           SUITE="${{ github.event.inputs.test_suite || 'all' }}"
           if [ "$SUITE" = "all" ]; then
-            echo 'test_suites=["readonly", "multisig", "feepayer", "basic"]' >> $GITHUB_OUTPUT
+            echo 'test_suites=["readonly", "multisig", "feepayer", "basic", "dao"]' >> $GITHUB_OUTPUT
           else
             echo "test_suites=[\"$SUITE\"]" >> $GITHUB_OUTPUT
           fi
@@ -189,6 +190,9 @@ jobs:
               ;;
             basic)
               npm run test:basic
+              ;;
+            dao)
+              npm run test:dao
               ;;
             *)
               npm test
