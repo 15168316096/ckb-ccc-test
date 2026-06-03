@@ -17,7 +17,7 @@ on:
       network:
         description: 'Network to test'
         required: true
-        default: 'testnet'
+        default: 'devnet'
         type: choice
         options:
           - testnet
@@ -64,9 +64,9 @@ jobs:
         id: set-matrix
         run: |
           # 确定网络列表
-          NETWORK="${{ github.event.inputs.network || 'testnet' }}"
+          NETWORK="${{ github.event.inputs.network || 'devnet' }}"
           if [ "$NETWORK" = "all" ]; then
-            echo 'networks=["testnet", "mainnet"]' >> $GITHUB_OUTPUT
+            echo 'networks=["devnet", "testnet"]' >> $GITHUB_OUTPUT
           else
             echo "networks=[\"$NETWORK\"]" >> $GITHUB_OUTPUT
           fi
@@ -167,10 +167,17 @@ jobs:
           
           # 测试网/主网使用公共节点，无需额外配置
           # 如果需要私钥测试，可以在 secrets 中配置
+          if [ "${{ matrix.network }}" = "devnet" ]; then
+            echo "DEVNET_RPC_URL=${{ secrets.DEVNET_RPC_URL }}" >> $GITHUB_ENV
+            echo "DEVNET_PRIVATE_KEY_1=${{ secrets.DEVNET_PRIVATE_KEY_1 }}" >> $GITHUB_ENV
+            echo "DEVNET_PRIVATE_KEY_2=${{ secrets.DEVNET_PRIVATE_KEY_2 }}" >> $GITHUB_ENV
+            echo "DEVNET_PRIVATE_KEY_3=${{ secrets.DEVNET_PRIVATE_KEY_3 }}" >> $GITHUB_ENV
+          fi
+
           if [ "${{ matrix.network }}" = "testnet" ]; then
-            echo "TEST_PRIVATE_KEY=${{ secrets.TESTNET_PRIVATE_KEY }}" >> $GITHUB_ENV
-            echo "TEST_PRIVATE_KEY_2=${{ secrets.TESTNET_PRIVATE_KEY_2 }}" >> $GITHUB_ENV
-            echo "TEST_PRIVATE_KEY_3=${{ secrets.TESTNET_PRIVATE_KEY_3 }}" >> $GITHUB_ENV
+            echo "TESTNET_PRIVATE_KEY_1=${{ secrets.TESTNET_PRIVATE_KEY_1 }}" >> $GITHUB_ENV
+            echo "TESTNET_PRIVATE_KEY_2=${{ secrets.TESTNET_PRIVATE_KEY_2 }}" >> $GITHUB_ENV
+            echo "TESTNET_PRIVATE_KEY_3=${{ secrets.TESTNET_PRIVATE_KEY_3 }}" >> $GITHUB_ENV
           fi
 
       - name: Run ${{ matrix.test_suite }} tests
