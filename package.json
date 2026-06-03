@@ -11,6 +11,7 @@
     "test:multisig": "jest --testPathPattern=multisig --forceExit",
     "test:feepayer": "jest --testPathPattern=feePayer --forceExit",
     "test:basic": "jest --testPathPattern=basicTransfer --forceExit",
+    "test:dao": "jest --testPathPattern=dao --forceExit",
     "test:readonly": "jest --testPathPattern=readonly --forceExit",
     "test:watch": "jest --watch",
     "test:coverage": "jest --coverage --forceExit"
