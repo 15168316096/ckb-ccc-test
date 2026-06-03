@@ -39,7 +39,7 @@ on:
   
   # PR 触发
   pull_request:
-    branches: [main, master]
+    branches: ['**']
   
   # Push 触发
   push:
@@ -95,6 +95,8 @@ jobs:
             test_suite: feepayer
           - network: mainnet
             test_suite: basic
+          - network: mainnet
+            test_suite: dao
     
     name: Test ${{ matrix.test_suite }} on ${{ matrix.network }}
     
