@@ -26,6 +26,14 @@ Tests for the new FeePayer abstraction (Spore zero-fee preparation):
 - Balance queries
 - Fee estimation
 
+### 4. Nervos DAO
+Tests for DAO-specific SDK helpers:
+- `KnownScript.NervosDao` script discovery and cell deps
+- DAO deposit output construction
+- DAO deposited/withdrew cell phase detection
+- DAO profit and claim epoch calculations
+- Read-only DAO accumulator fields from block headers
+
 ## Installation
 
 ```bash
@@ -91,6 +99,15 @@ npm run test:multisig
 
 # FeePayer tests only
 npm run test:feepayer
+
+# Basic transfer tests only
+npm run test:basic
+
+# Nervos DAO tests only
+npm run test:dao
+
+# Readonly tests only
+npm run test:readonly
 ```
 
 ### Other Commands
@@ -122,6 +139,9 @@ Can run on any network including mainnet:
 - 2-of-3 threshold signing
 - Transaction aggregation
 
+### DAO Tests (`dao.test.ts`)
+Can run on any network. The suite uses constructed cells for deterministic DAO cell and calculation checks, and reads live header/script metadata without submitting transactions.
+
 ## Project Structure
 
 ```
@@ -141,6 +161,7 @@ ckb-ccc-test/
     └── __tests__/
         ├── readonly.test.ts      # Network-agnostic readonly tests
         ├── basicTransfer.test.ts # Basic CKB transfer tests
+        ├── dao.test.ts           # Nervos DAO tests
         ├── multisig.test.ts      # Multisig signer tests (PR #349)
         └── feePayer.test.ts      # FeePayer layer tests (PR #328)
 ```
