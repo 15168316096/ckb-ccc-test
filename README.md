@@ -296,3 +296,27 @@ The workflow is defined in `.github/workflows/regression-test.yml`.
 ## License
 
 MIT
+
+## OffCKB DAO Devnet Test
+
+This repository also includes a Nervos DAO integration case that runs against an OffCKB devnet node. It uses the default funded OffCKB account to deposit a DAO cell, prepare the withdrawal, mine until the claim epoch, withdraw, and verify the output has left DAO.
+
+Requirements:
+
+~~~bash
+# Node.js 20+ is required by @offckb/cli
+npm ci
+npm run build
+CKB_BINARY=/path/to/ckb ./run-dao-devnet.sh
+~~~
+
+Useful environment variables:
+
+~~~bash
+CKB_RPC_URL=http://127.0.0.1:8114
+CKB_BINARY=/path/to/ckb
+OFFCKB_ACCOUNT_PRIVATE_KEY=0x...
+OFFCKB_LOG=offckb-devnet.log
+~~~
+
+The dao-devnet.yml GitHub Actions workflow builds nervosnetwork/ckb, starts OffCKB with that binary, and runs npm run test:dao.

@@ -1,0 +1,65 @@
+name: OffCKB DAO Devnet Test
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened]
+  push:
+    branches: ["**"]
+  workflow_dispatch: {}
+
+jobs:
+  offckb_dao_devnet:
+    name: OffCKB DAO devnet TypeScript test
+    runs-on: ubuntu-22.04
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - name: Install test dependencies
+        run: npm ci
+
+      - name: Type check
+        run: npm run build
+
+      - name: Checkout CKB
+        uses: actions/checkout@v4
+        with:
+          repository: nervosnetwork/ckb
+          path: ckb
+
+      - uses: dtolnay/rust-toolchain@master
+        with:
+          toolchain: 1.95.0
+
+      - name: Install CKB build dependencies
+        run: sudo apt-get update && sudo apt-get install -y libssl-dev pkg-config libclang-dev build-essential
+
+      - name: Cache CKB cargo target
+        uses: actions/cache@v4
+        with:
+          path: ckb/target
+          key: ckb-${{ runner.os }}-${{ hashFiles('ckb/Cargo.lock') }}
+          restore-keys: |
+            ckb-${{ runner.os }}-
+
+      - name: Build CKB
+        working-directory: ckb
+        run: |
+          make submodule-init
+          cargo build --locked --bin ckb --verbose --release
+
+      - name: Run OffCKB DAO devnet integration test
+        env:
+          CKB_BINARY: ${{ github.workspace }}/ckb/target/release/ckb
+        run: ./run-dao-devnet.sh
+
+      - name: Upload OffCKB logs
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: offckb-dao-devnet-log
+          path: offckb-devnet.log

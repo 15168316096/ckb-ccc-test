@@ -13,7 +13,10 @@
     "test:basic": "jest --testPathPattern=basicTransfer --forceExit",
     "test:readonly": "jest --testPathPattern=readonly --forceExit",
     "test:watch": "jest --watch",
-    "test:coverage": "jest --coverage --forceExit"
+    "test:coverage": "jest --coverage --forceExit",
+    "build": "tsc --noEmit",
+    "test:dao": "tsx src/dao-devnet.ts",
+    "ci:dao": "npm run build && ./run-dao-devnet.sh"
   },
   "keywords": [
     "ckb",
@@ -25,8 +28,9 @@
   "author": "",
   "license": "MIT",
   "dependencies": {
-    "@ckb-ccc/core": "^1.1.25",
-    "@ckb-ccc/ccc": "^1.1.25"
+    "@ckb-ccc/ccc": "^1.1.25",
+    "@ckb-ccc/core": "1.12.5",
+    "@offckb/cli": "0.4.6"
   },
   "devDependencies": {
     "@types/jest": "^29.5.12",
@@ -35,6 +39,7 @@
     "jest": "^29.7.0",
     "ts-jest": "^29.1.2",
     "ts-node": "^10.9.2",
+    "tsx": "4.19.2",
     "typescript": "^5.3.3"
   }
 }
